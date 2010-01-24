@@ -1,0 +1,50 @@
+Author:
+
+    Andrew McCollum <amccollum@gmail.com>
+
+
+Install:
+
+    $ git clone git://github.com/amccollum/pyheat.git
+    $ cd pyheat
+    $ sudo python setup.py install
+
+
+Required libraries:
+
+    PIL (http://www.pythonware.com/products/pil/)
+    PyOpenGL 3.0.1+ (http://pyopengl.sourceforge.net/)
+
+    CherryPy, for example server (http://www.cherrypy.org/)
+
+
+Example Server:
+
+    run "python examples/server.py"
+    navigate to "http://localhost:8080/map"
+
+
+Known Issues:
+
+    Some OpenGL implementations clip points outside the view area
+    causing torn edges along the tiles.
+
+
+Questions:
+
+    Read the code, or go to http://github.com/amccollum/pyheat/
+
+
+Acknowledgements:
+
+    I want to acknowledge Chad W. L Whitacre who created the gheat library
+    which provided the inspiration for this library.
+    (http://code.google.com/p/gheat/)
+
+
+License:
+
+    Copyright (c) 2009 Andrew McCollum
+    Licensed under the MIT License
+    (http://www.opensource.org/licenses/mit-license.php)
+
