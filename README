@@ -24,12 +24,6 @@ Example Server:
     navigate to "http://localhost:8080/map"
 
 
-Known Issues:
-
-    Some OpenGL implementations clip points outside the view area
-    causing torn edges along the tiles.
-
-
 Questions:
 
     Read the code, or go to http://github.com/amccollum/pyheat/
