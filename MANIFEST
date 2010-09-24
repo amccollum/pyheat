@@ -1,0 +1,14 @@
+README
+setup.py
+examples/heatlayer.py
+examples/points.py
+examples/server.py
+examples/tilelayer.js
+examples/palettes/classic.png
+examples/palettes/fire.png
+examples/palettes/omg.png
+examples/palettes/pbj.png
+examples/palettes/pgaitch.png
+pyheat/__init__.py
+pyheat/heatmap.py
+pyheat/heattile.py
