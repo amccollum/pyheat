@@ -1,4 +1,4 @@
-import cStringIO, os, sys
+import cStringIO, os, struct, sys
 import PIL.Image
 
 from ctypes import *
@@ -7,6 +7,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from OpenGL.GL.shaders import *
 from OpenGL.GL.EXT.framebuffer_object import *
+from OpenGL.GL.EXT.clip_volume_hint import *
 from OpenGL.GL.ARB.multitexture import *
 
 # compileProgram in OpenGL.GL.shaders fails to validate if multiple samplers are used
@@ -21,7 +22,7 @@ def compileProgram(*shaders):
         glDeleteShader(shader)
 
     return program
-    
+
 
 class HeatMap(object):
     width = None
@@ -31,6 +32,18 @@ class HeatMap(object):
     palette = None
     
     def __init__(self, left, right, bottom, top):
+        if bottom > top:
+            (bottom, top) = (top, bottom)
+            self.invert_y = True
+        else:
+            self.invert_y = False
+            
+        if left > right:
+            (left, right) = (right, left)
+            self.invert_x = True
+        else:
+            self.invert_x = False
+            
         self.left = left
         self.right = right
         self.bottom = bottom
@@ -74,6 +87,7 @@ class HeatMap(object):
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
     	glEnableClientState(GL_VERTEX_ARRAY)
+    	glHint(GL_CLIP_VOLUME_CLIPPING_HINT_EXT, GL_FASTEST)
 
         cls._compile_programs()
         cls._load_palette()
@@ -148,21 +162,20 @@ class HeatMap(object):
         cls.faded_points_program = compileProgram(
             compileShader('''
                 uniform float r;
-                uniform vec2 windowSize;
-                varying vec2 pos;
+                attribute vec2 point;
+                varying vec2 center;
 
                 void main() {
-                    gl_PointSize = 2.0 * r + 2.0;
                     gl_Position = ftransform();
-                    pos = (gl_Position.xy * windowSize + windowSize) * 0.5;
+                    center = point;
                 }
             ''', GL_VERTEX_SHADER),
             compileShader('''
                 uniform float r;
-                varying vec2 pos;
+                varying vec2 center;
 
                 void main() {
-                    float d = distance(gl_FragCoord.xy, pos);
+                    float d = distance(gl_FragCoord.xy, center);
                     if (d > r) discard;
                 
                     gl_FragColor.rgb = vec3(1.0, 1.0, 1.0);
@@ -174,6 +187,7 @@ class HeatMap(object):
                     //gl_FragColor.a = (1.0 - ((d*d) / (r*r))) / 2.0;
                     //gl_FragColor.a = (1.0 - (d / r)) / 2.0;
                     
+                    // Clamp the alpha to the range [0.0, 1.0]
                     gl_FragColor.a = clamp(gl_FragColor.a, 0.0, 1.0);
                 }
             ''', GL_FRAGMENT_SHADER))
@@ -182,14 +196,25 @@ class HeatMap(object):
         # Render all points with the specified radius
         glUseProgram(self.faded_points_program)
         glUniform1f(glGetUniformLocation(self.faded_points_program, 'r'), radius)
-        glUniform2f(glGetUniformLocation(self.faded_points_program, 'windowSize'), self.width, self.height)
+        
+        point_attrib_location = glGetAttribLocation(self.faded_points_program, 'point')
+        glEnableVertexAttribArray(point_attrib_location)
+        glVertexAttribPointer(point_attrib_location, 2, GL_FLOAT, False, 0,
+                              struct.pack("ff" * 4 * len(points),
+                                          *(val for (x, y) in points
+                                                for val in (x - self.left, y - self.bottom) * 4)))
         
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, self.fbo)
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
         
-    	glVertexPointerd(points)
-    	glDrawArrays(GL_POINTS, 0, len(points))
+        vertices = [point for (x, y) in points
+                          for point in ((x + radius, y + radius), (x - radius, y + radius),
+                                        (x - radius, y - radius), (x + radius, y - radius))]
+    	glVertexPointerd(vertices)
+    	glDrawArrays(GL_QUADS, 0, len(vertices))
     	glFlush()
+    	
+        glDisableVertexAttribArray(point_attrib_location)
         
     def transform_color(self, alpha):
         # Transform the color into the proper palette
@@ -212,7 +237,10 @@ class HeatMap(object):
         # Get the data from the heatmap framebuffer and convert it into a PIL image
         glActiveTextureARB(GL_TEXTURE1)
         data = glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE)
-        im = PIL.Image.frombuffer('RGBA', (self.width, self.height), data, 'raw', 'RGBA', 0, -1)
+        im = PIL.Image.frombuffer('RGBA', (self.width, self.height), data, 'raw', 'RGBA', 0, (1 if self.invert_y else -1))
+        
+        if self.invert_x:
+            im.transpose(PIL.Image.FLIP_LEFT_RIGHT)
 
         # Write the image to a buffer as a PNG
         f = cStringIO.StringIO()
@@ -252,6 +280,40 @@ def test1():
     
     #glutDisplayFunc(lambda:(hm.render_to_screen(), glutSwapBuffers()))
     #glutMainLoop()
+
+
+def test2():
+    import random, time
+
+    hm = HeatMap(969984, 970240, 1691648, 1691392)
+    
+    points = [(969898.80283591105, 1691823.7373164715),
+              (970411.74291342217, 1691546.3983977691),
+              (970316.84678542218, 1691268.9969628877)]
+    
+    hm.add_points(points, 300)
+    hm.transform_color(1.0)
+    image = hm.get_image()
+    open("test.png", "wb").write(image.read())
+
+def test3():
+    import random, time
+
+    hm = HeatMap(969984, 970240, 1691392, 1691648)
+    
+    points = [(969898.80283591105, 1691823.7373164715),
+              (970411.74291342217, 1691546.3983977691),
+              (970316.84678542218, 1691268.9969628877)]
+    
+    points = [(random.gauss(.5, .08) * 200 + 969984, random.gauss(.5, .075) * 100 + 1691392) for i in xrange(100)]
+    points += [(random.gauss(.7, .07) * 250 + 969984, random.gauss(.2, .04) * 150 + 1691392) for i in xrange(100)]
+    points += [(random.gauss(.4, .06) * 175 + 969984, random.gauss(.3, .04) * 200 + 1691392) for i in xrange(100)]
+
+    print points[:10]
+    hm.add_points(points, 30)
+    hm.transform_color(1.0)
+    image = hm.get_image()
+    open("test.png", "wb").write(image.read())
 
 
 if __name__ == "__main__":

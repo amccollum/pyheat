@@ -1,5 +1,5 @@
 import threading, Queue
-import pyheat.heattile
+import pyheat
 
 from points import points
 
@@ -40,9 +40,14 @@ class TileMaster(Batcher):
         radius = 1.5**zoom
         alpha = 1.0 - (zoom / 20.0)
         
-        tile = pyheat.heattile.HeatTile(zoom, tx, ty)
-        (lat_min, lat_max, lon_min, lon_max) = tile.get_ll_bounds(padding=2*radius)
-        tile.add_points(points, radius=radius)
+        tile = pyheat.HeatTile(zoom, tx, ty)
+        (lat_min, lat_max, lon_min, lon_max) = tile.get_ll_bounds(padding=radius+1)
+        tile_points = [point for point in points if point[0] > lat_min and
+                                                    point[0] < lat_max and
+                                                    point[1] > lon_min and
+                                                    point[1] < lon_max]
+            
+        tile.add_points(tile_points, radius=radius)
         tile.transform_color(alpha=alpha)
         return tile.get_image()
 
