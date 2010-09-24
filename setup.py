@@ -3,39 +3,31 @@
 
 """Python OpenGL Heatmap Library"""
 
-
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, find_packages
+from distutils.core import setup
 
 
 classifiers = """\
+Programming Language :: Python
+License :: OSI Approved :: MIT License
+Operating System :: OS Independent
 Development Status :: 3 - Alpha
-Environment :: Console
+Environment :: Console :: Framebuffer
 Environment :: Web Environment
 Intended Audience :: Developers
-License :: OSI Approved :: MIT License
-Programming Language :: Python
 Topic :: Software Development :: Libraries :: Python Modules
-"""
-
-doc_lines = __doc__.split('\n')
-
+Topic :: Multimedia :: Graphics"""
 
 setup(
     name='PyHeat',
     version='0.1',
     description='OpenGL Heatmap Library',
+    classifiers=classifiers.split('\n'),
     author='Andrew McCollum',
     author_email='amccollum@gmail.com',
     license='MIT',
     url='http://github.com/amccollum/pyheat',
-    packages=find_packages(exclude=['ez_setup']),
-    zip_safe=False,
-    install_requires=[
+    packages=['pyheat'],
+    requires=[
         'PyOpenGL',
         'PIL',
         ],
