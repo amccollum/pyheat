@@ -7,7 +7,6 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from OpenGL.GL.shaders import *
 from OpenGL.GL.EXT.framebuffer_object import *
-from OpenGL.GL.EXT.clip_volume_hint import *
 from OpenGL.GL.ARB.multitexture import *
 
 # compileProgram in OpenGL.GL.shaders fails to validate if multiple samplers are used
@@ -87,7 +86,6 @@ class HeatMap(object):
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
     	glEnableClientState(GL_VERTEX_ARRAY)
-    	glHint(GL_CLIP_VOLUME_CLIPPING_HINT_EXT, GL_FASTEST)
 
         cls._compile_programs()
         cls._load_palette()
