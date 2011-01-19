@@ -19,7 +19,7 @@ Topic :: Multimedia :: Graphics"""
 
 setup(
     name='PyHeat',
-    version='0.1',
+    version='0.2',
     description='OpenGL Heatmap Library',
     classifiers=classifiers.split('\n'),
     author='Andrew McCollum',
