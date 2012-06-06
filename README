@@ -20,7 +20,7 @@ Required libraries:
 
 Example Server:
 
-    run "python examples/server.py"
+    run "cd examples && python server.py"
     navigate to "http://localhost:8080/map"
 
 
