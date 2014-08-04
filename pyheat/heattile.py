@@ -23,8 +23,8 @@ class HeatTile(heatmap.HeatMap):
                 (self.ty + 1) * self.TILE_SIZE, self.ty * self.TILE_SIZE)
 
     def get_ll_bounds(self, padding=0.0):
-        (n, w) = self.px2ll(self.left - padding, self.bottom + padding)
-        (s, e) = self.px2ll(self.right + padding, self.top - padding)
+        (n, w) = self.px2ll(self.left - padding, self.bottom - padding)
+        (s, e) = self.px2ll(self.right + padding, self.top + padding)
         return (s, n, w, e)
 
     def ll2px(self, lat, lon):
